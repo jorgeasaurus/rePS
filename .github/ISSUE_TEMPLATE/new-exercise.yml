@@ -1,0 +1,58 @@
+name: New exercise
+description: Propose an exercise idea (or claim one you plan to write)
+title: "[Exercise] "
+labels: ["exercise"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! See the [authoring guide](https://github.com/jorgeasaurus/rePS/blob/main/docs/authoring.md) for what makes a good exercise.
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      options: [Core, Pipeline, Functions, Advanced]
+    validations:
+      required: true
+  - type: dropdown
+    id: level
+    attributes:
+      label: Level
+      options: ["1 - beginner", "2 - intermediate", "3 - advanced"]
+    validations:
+      required: true
+  - type: checkboxes
+    id: platforms
+    attributes:
+      label: Platforms
+      description: Leave all checked unless the exercise needs OS-specific APIs.
+      options:
+        - label: Windows
+        - label: Linux
+        - label: macOS
+  - type: textarea
+    id: lesson
+    attributes:
+      label: What does it teach?
+      description: The one concept or gotcha the learner should walk away with.
+    validations:
+      required: true
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Draft prompt
+      description: What the learner must build, with an example call and output.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Behaviours to test
+      description: Edge cases and expectations (empty input, single item, types, errors...).
+  - type: checkboxes
+    id: pr
+    attributes:
+      label: Contribution
+      options:
+        - label: I plan to open a PR for this exercise

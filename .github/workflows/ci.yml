@@ -1,0 +1,167 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ['**']
+    tags:
+      - 'v*.*.*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+  pull_request:
+    branches: ['**']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+  checks: read
+
+jobs:
+  build:
+    name: Build and Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Bootstrap Build Environment
+        shell: pwsh
+        run: ./build.ps1 -NoBuild
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: ./build.ps1 -Task Analyze
+
+      - name: Run Module Tests
+        shell: pwsh
+        run: ./build.ps1 -Task TestModule
+
+      - name: Validate Exercises (solutions pass, stubs fail)
+        shell: pwsh
+        run: ./build.ps1 -Task TestExercises
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: test-results-${{ matrix.os }}
+          path: build/TestResults/*.xml
+          if-no-files-found: warn
+
+      - name: Build Module
+        shell: pwsh
+        run: ./build.ps1 -Task Build
+
+      - name: Upload Build Artifacts
+        if: success() && matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: module-build
+          path: build/rePS/
+          if-no-files-found: error
+
+  release:
+    name: Publish and Release
+    needs: build
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4.3.0
+        with:
+          name: module-build
+          path: build/rePS/
+
+      - name: List Build Artifacts
+        shell: pwsh
+        run: |
+          Write-Host "=== Build Artifacts ===" -ForegroundColor Cyan
+          if (Test-Path build/rePS) {
+            Get-ChildItem -Path build/rePS -Recurse -File | ForEach-Object { Write-Host $_.FullName }
+          } else {
+            Write-Error "Build artifacts directory not found!"
+            exit 1
+          }
+
+      - name: Bootstrap Build Environment
+        shell: pwsh
+        run: ./build.ps1 -NoBuild
+
+      - name: Get Module Info
+        id: module_info
+        shell: pwsh
+        run: |
+          ./build.ps1 -Task GetVersion, GetReleaseNotes
+
+      - name: Validate Tag Matches Module Version
+        shell: pwsh
+        run: |
+          $moduleVersion = '${{ steps.module_info.outputs.version }}'
+          $tagVersion = '${{ github.ref_name }}' -replace '^v', ''
+          if ($moduleVersion -ne $tagVersion) {
+            throw "Tag version ($tagVersion) does not match module version ($moduleVersion). Please update rePS.psd1."
+          }
+          Write-Host "Version validated: $moduleVersion"
+
+      - name: Publish to PowerShell Gallery
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          if (-not $env:PSGALLERY_API_KEY) {
+            throw "PSGALLERY_API_KEY secret is not set"
+          }
+          Publish-Module -Path ./build/rePS -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Force
+
+      - name: Create Release Archive
+        shell: pwsh
+        run: |
+          $version = '${{ steps.module_info.outputs.version }}'
+          $zipName = "rePS-v$version.zip"
+          Compress-Archive -Path ./build/rePS/* -DestinationPath "./build/$zipName" -Force
+          Write-Host "Created release archive: $zipName"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631
+        with:
+          name: v${{ steps.module_info.outputs.version }}
+          body: |
+            ## rePS v${{ steps.module_info.outputs.version }}
+
+            ### Installation
+
+            ```powershell
+            Install-Module -Name rePS -Scope CurrentUser
+            ```
+
+            ### Release Notes
+
+            ${{ steps.module_info.outputs.release_notes }}
+          draft: false
+          prerelease: false
+          files: build/rePS-v${{ steps.module_info.outputs.version }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
