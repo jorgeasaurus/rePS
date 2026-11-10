@@ -1,5 +1,9 @@
 # rePS
 
+<div class="reps-hero">
+  <ascii-art piece="reps-rept-loop" aria-label="Animation of the rePS loop: rept runs the tests, one fails, the fix goes in, and the next rept passes"></ascii-art>
+</div>
+
 **Practice reps for PowerShell.** Ask for a random exercise, solve it in your editor,
 and let Pester tell you when you've got it. It's inspired by
 [PSKoans](https://github.com/vexx32/PSKoans), but built for quick drop-in sessions:

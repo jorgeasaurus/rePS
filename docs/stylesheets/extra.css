@@ -1,0 +1,13 @@
+/* rePS docs: hero animation (docs/assets/ascii, MIT) */
+.reps-hero {
+  margin: 1.2rem 0 1.6rem;
+  overflow: hidden;
+}
+
+.reps-hero ascii-art {
+  display: block;
+  max-width: 100%;
+  /* The piece is 84 columns: scale the glyphs so it fits from phones up. */
+  --ascii-size: clamp(5px, 1.45vw, 11px) !important;
+  border-radius: 0.4rem;
+}
