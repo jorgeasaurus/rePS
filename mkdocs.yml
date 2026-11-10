@@ -1,0 +1,48 @@
+site_name: rePS
+site_description: PowerShell practice reps - random exercises checked with Pester
+site_url: https://jorgeasaurus.github.io/rePS/
+repo_url: https://github.com/jorgeasaurus/rePS
+repo_name: jorgeasaurus/rePS
+
+theme:
+  name: material
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - navigation.footer
+    - content.code.copy
+    - search.highlight
+    - search.suggest
+  palette:
+    - scheme: slate
+      primary: black
+      accent: light blue
+  font:
+    text: Montserrat
+    code: JetBrains Mono
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Commands: commands.md
+  - Exercises: exercises.md
+  - Writing exercises: authoring.md

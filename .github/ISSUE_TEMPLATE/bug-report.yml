@@ -1,0 +1,30 @@
+name: Bug report
+description: Something in rePS (or an exercise) is broken
+labels: ["bug"]
+body:
+  - type: input
+    id: exercise
+    attributes:
+      label: Exercise id (if any)
+      placeholder: core-fizzbuzz
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the command you ran and the output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Output of the command below.
+      value: |
+        $PSVersionTable.PSVersion; $PSVersionTable.OS; (Get-Module rePS -ListAvailable).Version; (Get-Module Pester -ListAvailable).Version
+      render: text
+    validations:
+      required: true
