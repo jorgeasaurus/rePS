@@ -13,6 +13,7 @@ $script:RunnerPath = Join-Path -Path $script:ModuleRoot -ChildPath 'Runner/Invok
 $script:ValidTopics = @('Core', 'Pipeline', 'Functions', 'Advanced')
 $script:ValidPlatforms = @('Windows', 'Linux', 'MacOS')
 $script:ExerciseCache = $null
+$script:ModuleVersion = [version](Import-PowerShellDataFile -LiteralPath (Join-Path $script:ModuleRoot 'rePS.psd1')).ModuleVersion
 
 foreach ($folder in 'Private', 'Public') {
     $folderPath = Join-Path -Path $script:ModuleRoot -ChildPath $folder
@@ -37,5 +38,8 @@ foreach ($alias in $aliases.GetEnumerator()) {
 }
 
 Update-TypeData -TypeName 'RePS.Exercise' -DefaultDisplayPropertySet 'Id', 'Title', 'Topic', 'Level', 'Status' -Force
+
+# Background, non-blocking check for a newer version (see Private/UpdateCheck.ps1).
+Start-RePSUpdateCheck
 
 Export-ModuleMember -Function (Get-ChildItem -Path (Join-Path $script:ModuleRoot 'Public') -Filter '*.ps1').BaseName -Alias @($aliases.Keys)

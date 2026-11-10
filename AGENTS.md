@@ -16,8 +16,8 @@ in a child `pwsh` process (`Runner/Invoke-RePSTestRun.ps1`). Progress lives in
 | --- | --- |
 | `rePS.psd1` / `rePS.psm1` | Manifest (exports, aliases, Pester 5.5 dependency) / loader |
 | `Public/` | One exported function per file |
-| `Private/` | Helpers: `Storage.ps1` (home, workspace, progress), `Exercises.ps1` (catalog, display) |
-| `Runner/` | Child-process Pester runner |
+| `Private/` | Helpers: `Storage.ps1` (home, workspace, progress), `Exercises.ps1` (catalog, display), `UpdateCheck.ps1` (gallery update notices) |
+| `Runner/` | Child-process Pester runner, background gallery version lookup |
 | `Exercises/<Topic>/<id>/` | `exercise.psd1`, `stub.ps1`, `solution.ps1`, `tests.Tests.ps1` |
 | `Tests/` | Module tests (`rePS.Tests.ps1`) and exercise schema tests (`Exercises.Tests.ps1`) |
 | `scripts/` | `Test-Exercises.ps1` (behaviour checks), `New-Exercise.ps1`, `New-ExerciseCatalog.ps1` |
@@ -50,5 +50,7 @@ Always run `./build.ps1 -Task Analyze, Test` before committing.
 
 - Approved verbs, `[CmdletBinding()]` on public functions, comment-based help with `.EXAMPLE`.
 - `Write-Host` is allowed: the host is the UI of this tool (rule excluded in the build).
+- Tests must never hit the network: `Tests/rePS.Tests.ps1` sets `REPS_NO_UPDATE_CHECK` before import and mocks `Start-ThreadJob`.
+- The update check must never throw or block module import.
 - Never change the progress JSON shape without handling old files in `Read-RePSProgress`.
 - Bump `ModuleVersion` and add a `CHANGELOG.md` section for releases. CI checks that the tag matches.

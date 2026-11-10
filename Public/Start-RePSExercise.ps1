@@ -105,6 +105,8 @@ function Start-RePSExercise {
     Write-Host '  Edit the file, then run Test-RePSExercise (rept). Stuck? Get-RePSHint (reph).' -ForegroundColor DarkGray
     Write-Host ''
 
+    Show-RePSUpdateNotice
+
     if (-not $NoOpen) { $null = Open-RePSFile -Path $workspaceFile }
 
     if ($PassThru) { Get-RePSExercise -Id $exercise.Id }

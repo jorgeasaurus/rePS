@@ -11,6 +11,8 @@ Every command has full comment-based help: `Get-Help <command> -Full`.
 | `Get-RePSProgress` | `repp` | Progress summary per topic |
 | `Get-RePSExercise` | | Browse the catalog (no side effects) |
 | `Reset-RePSProgress` | | Clear progress (supports `-WhatIf`) |
+| `Get-RePSConfiguration` | | Settings, update status, data paths |
+| `Set-RePSConfiguration` | | Change the update-check cadence |
 
 ## Start-RePSExercise
 
@@ -60,3 +62,14 @@ Reset-RePSProgress [[-Id] <string>] [-IncludeWorkspace] [-WhatIf] [-Confirm]
 ```
 
 Asks for confirmation by default (`ConfirmImpact = High`).
+
+## Get-RePSConfiguration / Set-RePSConfiguration
+
+```powershell
+Set-RePSConfiguration -UpdateCheck <Never|Daily|Weekly|BiWeekly|Monthly> [-WhatIf]
+Get-RePSConfiguration
+```
+
+`UpdateCheck` (default `Weekly`) controls how often rePS looks up the latest version on the
+PowerShell Gallery in the background. `Get-RePSConfiguration` shows the cadence, the last
+check, the installed and latest versions, and the data and workspace paths.

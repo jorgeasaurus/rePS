@@ -38,6 +38,8 @@ Requires **PowerShell 7.2+**. Pester 5.5+ is installed as a dependency.
 - **Progress tracking** in `~/.reps/progress.json`. `reps -Unseen` gives you something new,
   and `reps -Review` brings back what you failed.
 - **OS-aware.** Windows-only exercises (registry) never show up on Linux or macOS.
+- **Update notices.** A weekly background check (the tiPS approach) tells you when a new
+  version is out. It never updates on its own. Use `Set-RePSConfiguration -UpdateCheck Never` to opt out.
 
 Filters: `reps -Topic Functions -Level 2`, `reps -Tag regex`, `reps -Id core-fizzbuzz`.
 

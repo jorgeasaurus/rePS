@@ -2,11 +2,15 @@
 
 BeforeAll {
     $manifestPath = Join-Path $PSScriptRoot '..' 'rePS.psd1'
-    Import-Module $manifestPath -Force
 
     $script:originalHome = $env:REPS_HOME
     $script:originalNoOpen = $env:REPS_NO_OPEN
+    $script:originalNoUpdate = $env:REPS_NO_UPDATE_CHECK
     $env:REPS_NO_OPEN = '1'
+    $env:REPS_NO_UPDATE_CHECK = '1'   # never touch the network from tests
+    $env:REPS_HOME = Join-Path $TestDrive 'import-home'
+
+    Import-Module $manifestPath -Force
 
     function Reset-TestHome {
         $env:REPS_HOME = Join-Path $TestDrive ([guid]::NewGuid())
@@ -23,6 +27,7 @@ BeforeAll {
 AfterAll {
     $env:REPS_HOME = $script:originalHome
     $env:REPS_NO_OPEN = $script:originalNoOpen
+    $env:REPS_NO_UPDATE_CHECK = $script:originalNoUpdate
     Remove-Module rePS -Force -ErrorAction SilentlyContinue
 }
 
@@ -282,5 +287,163 @@ Describe 'Progress file resilience' {
         '{ not json' | Set-Content (Join-Path $env:REPS_HOME 'progress.json')
         { Start-RePSExercise -Id $sampleId -NoOpen -WarningAction SilentlyContinue 6>$null } | Should -Not -Throw
         (Get-TestProgress).Current | Should -Be $sampleId
+    }
+}
+
+Describe 'Update check' {
+    BeforeEach {
+        Reset-TestHome
+        $null = New-Item -ItemType Directory -Path $env:REPS_HOME -Force
+        InModuleScope rePS { $script:UpdateNoticeShown = $false }
+    }
+
+    It 'is due after <Days> days on a <Cadence> cadence: <Expected>' -ForEach @(
+        @{ Cadence = 'Never'; Days = 365; Expected = $false }
+        @{ Cadence = 'Daily'; Days = 0; Expected = $false }
+        @{ Cadence = 'Daily'; Days = 1; Expected = $true }
+        @{ Cadence = 'Weekly'; Days = 6; Expected = $false }
+        @{ Cadence = 'Weekly'; Days = 7; Expected = $true }
+        @{ Cadence = 'BiWeekly'; Days = 13; Expected = $false }
+        @{ Cadence = 'BiWeekly'; Days = 14; Expected = $true }
+        @{ Cadence = 'Monthly'; Days = 29; Expected = $false }
+        @{ Cadence = 'Monthly'; Days = 30; Expected = $true }
+    ) {
+        InModuleScope rePS -Parameters @{ Cadence = $Cadence; Days = $Days } {
+            $now = [datetime]'2026-06-01'
+            Test-RePSUpdateCheckDue -Cadence $Cadence -LastChecked $now.AddDays(-$Days) -Now $now
+        } | Should -Be $Expected
+    }
+
+    It 'is always due when it has never run' {
+        InModuleScope rePS { Test-RePSUpdateCheckDue -Cadence Monthly } | Should -BeTrue
+    }
+
+    Context 'Start-RePSUpdateCheck' {
+        BeforeEach {
+            $script:savedEnv = @{ NoUpdate = $env:REPS_NO_UPDATE_CHECK; CI = $env:CI; GHA = $env:GITHUB_ACTIONS; TF = $env:TF_BUILD }
+            $env:REPS_NO_UPDATE_CHECK = $null; $env:CI = $null; $env:GITHUB_ACTIONS = $null; $env:TF_BUILD = $null
+            Mock -ModuleName rePS Start-ThreadJob { }
+        }
+        AfterEach {
+            $env:REPS_NO_UPDATE_CHECK = $savedEnv.NoUpdate; $env:CI = $savedEnv.CI
+            $env:GITHUB_ACTIONS = $savedEnv.GHA; $env:TF_BUILD = $savedEnv.TF
+        }
+
+        It 'starts a background job and records the check date when due' {
+            InModuleScope rePS { Start-RePSUpdateCheck }
+            Should -Invoke -ModuleName rePS Start-ThreadJob -Times 1 -Exactly
+            Join-Path $env:REPS_HOME 'update-lastcheck.txt' | Should -Exist
+        }
+        It 'does not check again before the cadence elapses' {
+            InModuleScope rePS { Start-RePSUpdateCheck; Start-RePSUpdateCheck }
+            Should -Invoke -ModuleName rePS Start-ThreadJob -Times 1 -Exactly
+        }
+        It 'does nothing when set to Never' {
+            Set-RePSConfiguration -UpdateCheck Never
+            InModuleScope rePS { Start-RePSUpdateCheck }
+            Should -Invoke -ModuleName rePS Start-ThreadJob -Times 0 -Exactly
+        }
+        It 'does nothing when <Name> is set' -ForEach @(@{ Name = 'REPS_NO_UPDATE_CHECK' }, @{ Name = 'CI' }) {
+            Set-Item -Path "env:$Name" -Value '1'
+            InModuleScope rePS { Start-RePSUpdateCheck }
+            Should -Invoke -ModuleName rePS Start-ThreadJob -Times 0 -Exactly
+        }
+        It 'never throws' {
+            Mock -ModuleName rePS Start-ThreadJob { throw 'boom' }
+            { InModuleScope rePS { Start-RePSUpdateCheck } } | Should -Not -Throw
+        }
+    }
+
+    Context 'Show-RePSUpdateNotice' {
+        BeforeAll {
+            function Set-CachedLatest([string]$Version) {
+                @{ Version = $Version; CheckedAt = (Get-Date).ToString('o') } | ConvertTo-Json |
+                    Set-Content (Join-Path $env:REPS_HOME 'update-latest.json')
+            }
+        }
+
+        It 'announces a newer version' {
+            Set-CachedLatest '99.0.0'
+            $out = InModuleScope rePS { Show-RePSUpdateNotice } 6>&1 | Out-String
+            $out | Should -Match 'rePS 99\.0\.0 is available'
+            $out | Should -Match 'Update-Module rePS'
+        }
+        It 'shows the notice only once per session' {
+            Set-CachedLatest '99.0.0'
+            $null = InModuleScope rePS { Show-RePSUpdateNotice } 6>&1
+            InModuleScope rePS { Show-RePSUpdateNotice } 6>&1 | Out-String | Should -Not -Match 'available'
+        }
+        It 'stays quiet when up to date' {
+            Set-CachedLatest '0.0.1'
+            InModuleScope rePS { Show-RePSUpdateNotice } 6>&1 | Out-String | Should -Not -Match 'available'
+        }
+        It 'stays quiet when set to Never' {
+            Set-CachedLatest '99.0.0'
+            Set-RePSConfiguration -UpdateCheck Never
+            InModuleScope rePS { Show-RePSUpdateNotice } 6>&1 | Out-String | Should -Not -Match 'available'
+        }
+        It 'ignores a corrupt cache' {
+            '{ nope' | Set-Content (Join-Path $env:REPS_HOME 'update-latest.json')
+            { InModuleScope rePS { Show-RePSUpdateNotice } 6>$null } | Should -Not -Throw
+        }
+        It 'is shown by Start-RePSExercise' {
+            Set-CachedLatest '99.0.0'
+            Start-RePSExercise -Id $sampleId -NoOpen 6>&1 | Out-String | Should -Match 'is available'
+        }
+    }
+
+    Context 'Get-RePSLatestVersion runner' {
+        BeforeAll {
+            $runner = Join-Path $PSScriptRoot '..' 'Runner' 'Get-RePSLatestVersion.ps1'
+            function New-Feed([string[]]$Entries) {
+                $body = foreach ($e in $Entries) {
+                    $v, $pre = $e -split ':'
+                    "<entry><m:properties><d:Version>$v</d:Version><d:IsPrerelease m:type=`"Edm.Boolean`">$pre</d:IsPrerelease></m:properties></entry>"
+                }
+                $path = Join-Path $TestDrive "feed-$([guid]::NewGuid()).xml"
+                @"
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata">$($body -join '')</feed>
+"@ | Set-Content $path
+                $path
+            }
+        }
+
+        It 'caches the highest stable version' {
+            $out = Join-Path $TestDrive 'latest.json'
+            & $runner -ModuleName rePS -OutputPath $out -FeedFile (New-Feed '0.2.0:false', '0.10.0:false', '1.0.0-beta1:true')
+            (Get-Content $out -Raw | ConvertFrom-Json).Version | Should -Be '0.10.0'
+        }
+        It 'writes nothing when the module is not on the gallery' {
+            $out = Join-Path $TestDrive 'none.json'
+            & $runner -ModuleName rePS -OutputPath $out -FeedFile (New-Feed @())
+            $out | Should -Not -Exist
+        }
+        It 'fails silently when the lookup fails' {
+            $out = Join-Path $TestDrive 'fail.json'
+            { & $runner -ModuleName rePS -OutputPath $out -FeedFile (Join-Path $TestDrive 'missing.xml') } | Should -Not -Throw
+            $out | Should -Not -Exist
+        }
+    }
+}
+
+Describe 'Set-RePSConfiguration / Get-RePSConfiguration' {
+    BeforeEach { Reset-TestHome }
+    It 'defaults to a weekly update check' {
+        (Get-RePSConfiguration).UpdateCheck | Should -Be 'Weekly'
+    }
+    It 'persists the update cadence' {
+        Set-RePSConfiguration -UpdateCheck Monthly
+        (Get-RePSConfiguration).UpdateCheck | Should -Be 'Monthly'
+        Get-Content (Join-Path $env:REPS_HOME 'config.json') -Raw | Should -Match 'Monthly'
+    }
+    It 'rejects unknown cadences' {
+        { Set-RePSConfiguration -UpdateCheck Hourly } | Should -Throw
+    }
+    It 'supports -WhatIf' {
+        Set-RePSConfiguration -UpdateCheck Never -WhatIf
+        (Get-RePSConfiguration).UpdateCheck | Should -Be 'Weekly'
+    }
+    It 'reports the installed version' {
+        (Get-RePSConfiguration).InstalledVersion | Should -Be ([version](Import-PowerShellDataFile $manifestPath).ModuleVersion)
     }
 }

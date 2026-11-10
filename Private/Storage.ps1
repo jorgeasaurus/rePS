@@ -9,7 +9,7 @@ function Get-RePSHome {
 
     $root = if ($env:REPS_HOME) { $env:REPS_HOME } else { Join-Path -Path $HOME -ChildPath '.reps' }
     if (-not (Test-Path -LiteralPath $root)) {
-        $null = New-Item -Path $root -ItemType Directory -Force
+        $null = New-Item -Path $root -ItemType Directory -Force -WhatIf:$false
     }
     $root
 }
@@ -27,7 +27,7 @@ function Get-RePSWorkspacePath {
 
     $workspace = Join-Path -Path (Get-RePSHome) -ChildPath 'workspace'
     if (-not (Test-Path -LiteralPath $workspace)) {
-        $null = New-Item -Path $workspace -ItemType Directory -Force
+        $null = New-Item -Path $workspace -ItemType Directory -Force -WhatIf:$false
     }
     if ($Id) { Join-Path -Path $workspace -ChildPath "$Id.ps1" } else { $workspace }
 }

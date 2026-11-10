@@ -21,6 +21,8 @@
         'Get-RePSExercise'
         'Get-RePSProgress'
         'Reset-RePSProgress'
+        'Get-RePSConfiguration'
+        'Set-RePSConfiguration'
     )
     CmdletsToExport      = @()
     VariablesToExport    = @()

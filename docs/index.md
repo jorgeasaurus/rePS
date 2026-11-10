@@ -52,9 +52,30 @@ reps -Tag regex                    # by tag
 Exercises that only work on one OS (for example registry exercises on Windows) are
 skipped automatically on other platforms.
 
+## Update notices
+
+rePS checks the PowerShell Gallery for a newer version **weekly**, using the same approach as
+[tiPS](https://github.com/deadlydog/PowerShell.tiPS). The check runs in a background
+thread job when the module loads, so it never slows you down. If a newer version exists,
+`reps` shows a one-line notice once per session:
+
+```text
+  rePS 0.2.0 is available (you have 0.1.0). Update with: Update-Module rePS
+```
+
+rePS never updates itself. You decide when to run `Update-Module`.
+
+```powershell
+Set-RePSConfiguration -UpdateCheck Daily     # Never | Daily | Weekly | BiWeekly | Monthly
+Get-RePSConfiguration                         # cadence, last check, latest version, data paths
+```
+
+Checks are skipped when `REPS_NO_UPDATE_CHECK` is set or in CI (`CI`, `GITHUB_ACTIONS`, `TF_BUILD`).
+
 ## Configuration
 
 | Environment variable | Effect |
 | --- | --- |
 | `REPS_HOME` | Data folder (default `~/.reps`) |
 | `REPS_NO_OPEN` | Set to any value to never open the editor |
+| `REPS_NO_UPDATE_CHECK` | Set to any value to never check for updates |

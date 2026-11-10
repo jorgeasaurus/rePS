@@ -19,4 +19,5 @@ module version, so keep the `## [x.y.z] - date` heading format.
 - `Get-RePSExercise`, `Get-RePSProgress` (`repp`) and `Reset-RePSProgress`: browse the catalog and manage progress in `~/.reps/progress.json`.
 - 40 exercises across Core, Pipeline, Functions and Advanced topics, levels 1-3, with OS filtering for platform-specific exercises.
 - Build (InvokeBuild), CI on Windows, Linux and macOS, exercise validation (solutions pass, stubs fail), tag-based release to PSGallery and GitHub, MkDocs site.
+- Update notices: a background check of the PowerShell Gallery at import (weekly by default, modelled on tiPS) and a once-per-session notice from `reps` when a newer version exists. `Get-RePSConfiguration` / `Set-RePSConfiguration -UpdateCheck Never|Daily|Weekly|BiWeekly|Monthly`; skipped in CI or with `REPS_NO_UPDATE_CHECK`.
 - `scripts/New-Exercise.ps1` scaffolder, exercise catalog generator, issue forms and contributor guide.
