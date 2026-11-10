@@ -68,6 +68,14 @@ Task Analyze {
         (Join-Path $SourcePath 'build')
     )
 
+    # Per-file-type exclusions for analyzer false positives
+    $extraExclusions = @{
+        # Pester: variables set in BeforeAll are used in It blocks; $SolutionPath is used in BeforeAll
+        '*.Tests.ps1' = @('PSUseDeclaredVarsMoreThanAssignments', 'PSReviewUnusedParameter')
+        # InvokeBuild DSL: 'Task' is an alias of Add-BuildTask by design
+        '*.build.ps1' = @('PSAvoidUsingCmdletAliases')
+    }
+
     $results = Get-ChildItem -Path $SourcePath -Include '*.ps1', '*.psm1', '*.psd1' -Recurse -File |
         Where-Object {
             $file = $_
@@ -75,7 +83,14 @@ Task Analyze {
             # Stubs are intentionally incomplete (unused params, TODOs)
             -not $excluded -and $file.Name -ne 'stub.ps1'
         } |
-        ForEach-Object { Invoke-ScriptAnalyzer -Path $_.FullName @analyzerParams }
+        ForEach-Object {
+            $file = $_
+            $params = $analyzerParams.Clone()
+            foreach ($pattern in $extraExclusions.Keys) {
+                if ($file.Name -like $pattern) { $params.ExcludeRule = @($params.ExcludeRule) + $extraExclusions[$pattern] }
+            }
+            Invoke-ScriptAnalyzer -Path $file.FullName @params
+        }
 
     if ($results) {
         $results | Format-Table -AutoSize

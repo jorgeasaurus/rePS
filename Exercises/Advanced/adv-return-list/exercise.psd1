@@ -21,7 +21,7 @@ Watch out: PowerShell unrolls collections written to the output, so a naive
 '@
     Hints        = @(
         '$list = [System.Collections.Generic.List[int]]::new(), then $list.Add($i) inside a loop.'
-        'Write-Output -NoEnumerate $list writes the collection as one object.'
+        'Write-Output -NoEnumerate -InputObject $list writes the collection as one object.'
         'The unary comma operator also works: , $list wraps it in a one-element array, and only that wrapper gets unrolled.'
     )
 }

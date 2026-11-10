@@ -48,8 +48,15 @@ foreach ($module in $requiredModules) {
 
     if (-not $installed) {
         Write-Information "Installing $($module.Name) >= $($module.MinimumVersion)..."
-        Install-Module -Name $module.Name -MinimumVersion $module.MinimumVersion -Force -Scope CurrentUser -AllowClobber -SkipPublisherCheck
-        Write-Information "  Installed $($module.Name)"
+        Install-Module -Name $module.Name -MinimumVersion $module.MinimumVersion -Force -Scope CurrentUser -AllowClobber -SkipPublisherCheck -ErrorAction Stop
+        # Install-Module can fail without throwing (e.g. a blocked download), so verify.
+        $installed = Get-Module -Name $module.Name -ListAvailable |
+            Where-Object { $_.Version -ge [version]$module.MinimumVersion } |
+            Select-Object -First 1
+        if (-not $installed) {
+            throw "Failed to install $($module.Name) >= $($module.MinimumVersion). Check access to the PowerShell Gallery."
+        }
+        Write-Information "  Installed $($module.Name) v$($installed.Version)"
     } else {
         Write-Information "Found $($module.Name) v$($installed.Version)"
     }

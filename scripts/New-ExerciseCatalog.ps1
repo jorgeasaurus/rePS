@@ -37,7 +37,7 @@ foreach ($topic in 'Core', 'Pipeline', 'Functions', 'Advanced') {
     $lines.Add('| --- | --- | --- | --- | --- |')
     foreach ($e in $topicExercises) {
         $platforms = if (@($e.Platforms).Count -eq 3) { 'All' } else { $e.Platforms -join ', ' }
-        $lines.Add("| ``$($e.Id)`` | $($e.Title) | $('★' * $e.Level) | $($e.Tags -join ', ') | $platforms |")
+        $lines.Add("| ``$($e.Id)`` | $($e.Title) | $([string][char]0x2605 * $e.Level) | $($e.Tags -join ', ') | $platforms |")
     }
 }
 

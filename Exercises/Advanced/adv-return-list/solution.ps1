@@ -8,5 +8,5 @@ function Get-NumberList {
     for ($i = 1; $i -le $Count; $i++) {
         $list.Add($i)
     }
-    Write-Output -NoEnumerate $list
+    Write-Output -NoEnumerate -InputObject $list
 }
