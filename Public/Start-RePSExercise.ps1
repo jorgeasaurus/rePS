@@ -65,6 +65,7 @@ function Start-RePSExercise {
 
     if ($PSCmdlet.ParameterSetName -eq 'ById') {
         $exercise = Resolve-RePSExercise -Id $Id -Progress $progress
+        Assert-RePSPlatform -Exercise $exercise
     } else {
         $platform = Get-RePSPlatform
         $pool = @(Get-RePSExerciseData | Where-Object { $platform -in $_.Platforms })

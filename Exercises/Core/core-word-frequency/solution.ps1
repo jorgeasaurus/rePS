@@ -7,7 +7,7 @@ function Get-WordFrequency {
     )
 
     $frequency = @{}
-    foreach ($word in ($Text -split '\W+')) {
+    foreach ($word in ($Text -split '[\W_]+')) {
         if (-not $word) { continue }
         $frequency[$word.ToLowerInvariant()]++
     }

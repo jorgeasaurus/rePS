@@ -18,8 +18,9 @@ Write Test-EmailAddress so it returns $true when -Address looks like an email:
     Test-EmailAddress -Address 'ada@localhost'     # False
 '@
     Hints        = @(
-        '-match returns $true or $false. Anchor the pattern with ^ and $ so the whole string has to match.'
+        '-match returns $true or $false. Anchor the pattern so the whole string has to match.'
         '[^@\s]+ means "one or more characters that are not @ or whitespace".'
         'Escape the dot: \. matches a literal dot. [A-Za-z]{2,} matches 2+ letters.'
+        'Gotcha: $ also matches just before a trailing newline. \A and \z anchor the absolute start and end of the input.'
     )
 }

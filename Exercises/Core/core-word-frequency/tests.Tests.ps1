@@ -22,6 +22,11 @@ Describe 'Get-WordFrequency' {
         $f.Count | Should -Be 2
         $f['yes'] | Should -Be 2
     }
+    It 'treats underscores as separators' {
+        $f = Get-WordFrequency -Text 'one_two one'
+        $f['one'] | Should -Be 2
+        $f['two'] | Should -Be 1
+    }
     It 'returns an empty hashtable for empty text' {
         (Get-WordFrequency -Text '').Count | Should -Be 0
     }

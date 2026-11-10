@@ -40,6 +40,7 @@ if (-not $PSCmdlet.ShouldProcess($folder, 'Create exercise')) { return }
 
 $null = New-Item -Path $folder -ItemType Directory -Force
 $platformList = ($Platforms | ForEach-Object { "'$_'" }) -join ', '
+$authorLiteral = $Author -replace "'", "''"
 
 @"
 @{
@@ -50,7 +51,7 @@ $platformList = ($Platforms | ForEach-Object { "'$_'" }) -join ', '
     Platforms    = @($platformList)
     Tags         = @('todo')
     FunctionName = '$FunctionName'
-    Author       = '$Author'
+    Author       = '$authorLiteral'
     Prompt       = @'
 TODO: Describe what $FunctionName must do, with an example:
 

@@ -16,6 +16,10 @@ BeforeAll {
         $env:REPS_HOME = Join-Path $TestDrive ([guid]::NewGuid())
     }
 
+    function Get-RePSPlatformName {
+        if ($IsWindows) { 'Windows' } elseif ($IsMacOS) { 'MacOS' } else { 'Linux' }
+    }
+
     function Get-TestProgress {
         Get-Content (Join-Path $env:REPS_HOME 'progress.json') -Raw | ConvertFrom-Json -AsHashtable
     }
@@ -151,6 +155,12 @@ Describe 'Start-RePSExercise' {
     It 'throws for an unknown id' {
         { Start-RePSExercise -Id 'nope-nope' -NoOpen 6>$null } | Should -Throw '*not found*'
     }
+    It 'refuses an exercise for another OS' {
+        $other = Get-RePSExercise -AllPlatforms | Where-Object { (Get-RePSPlatformName) -notin $_.Platforms } | Select-Object -First 1
+        if (-not $other) { Set-ItResult -Skipped -Because 'every exercise supports this OS'; return }
+        { Start-RePSExercise -Id $other.Id -NoOpen 6>$null } | Should -Throw '*only runs on*'
+        { Test-RePSExercise -Id $other.Id -Quiet 6>$null } | Should -Throw '*only runs on*'
+    }
 }
 
 Describe 'Test-RePSExercise' {
@@ -199,6 +209,33 @@ Describe 'Test-RePSExercise' {
     It 'reports a solution that does not parse as a failure' {
         'function Get-Greeting {' | Set-Content $workspaceFile
         (Test-RePSExercise -Quiet -PassThru 6>$null).Passed | Should -BeFalse
+    }
+    It 'times out an infinite loop, records a failure, and does not hang' {
+        'function Get-Greeting { while ($true) { } }' | Set-Content $workspaceFile
+        $elapsed = Measure-Command { $script:r = Test-RePSExercise -Quiet -PassThru -TimeoutSeconds 8 6>$null }
+        $r.Passed | Should -BeFalse
+        $r.Failed | Should -Match 'Timed out'
+        $elapsed.TotalSeconds | Should -BeLessThan 30
+        (Get-TestProgress).Exercises[$sampleId].Status | Should -Be 'Failed'
+    }
+    It 'handles a solution path containing spaces' {
+        $dir = Join-Path $TestDrive 'with space'
+        $null = New-Item -ItemType Directory -Path $dir -Force
+        $file = Join-Path $dir 'my solution.ps1'
+        Copy-Item (Join-Path $sampleFolder 'solution.ps1') $file
+        (Test-RePSExercise -Id $sampleId -Path $file -Quiet -PassThru 6>$null).Passed | Should -BeTrue
+    }
+    It 'keeps progress written by another session during the run' {
+        # The solution runs inside the test process, so it can play "another session"
+        # that reveals the solution while the tests are running.
+        $sideEffect = @'
+$progressPath = Join-Path $env:REPS_HOME 'progress.json'
+$p = Get-Content $progressPath -Raw | ConvertFrom-Json -AsHashtable
+$p.Exercises['core-greeting'].SolutionShown = $true
+$p | ConvertTo-Json -Depth 5 | Set-Content $progressPath
+'@
+        (Get-Content (Join-Path $sampleFolder 'solution.ps1') -Raw) + "`n" + $sideEffect | Set-Content $workspaceFile
+        (Test-RePSExercise -Quiet -PassThru 6>$null).Status | Should -Be 'Assisted' -Because 'a stale snapshot would overwrite SolutionShown and record Passed'
     }
     It 'throws without a current exercise' {
         Reset-TestHome
@@ -273,6 +310,12 @@ Describe 'Reset-RePSProgress' {
         $p = Get-TestProgress
         $p.Exercises.Count | Should -Be 0
         $p.Current | Should -BeNullOrEmpty
+    }
+    It 'rejects ids that could escape the workspace' {
+        $outside = Join-Path $env:REPS_HOME 'outside.ps1'
+        'keep me' | Set-Content $outside
+        { Reset-RePSProgress -Id '../outside' -IncludeWorkspace -Confirm:$false } | Should -Throw
+        $outside | Should -Exist
     }
     It 'does nothing with -WhatIf' {
         Reset-RePSProgress -WhatIf
@@ -445,5 +488,17 @@ Describe 'Set-RePSConfiguration / Get-RePSConfiguration' {
     }
     It 'reports the installed version' {
         (Get-RePSConfiguration).InstalledVersion | Should -Be ([version](Import-PowerShellDataFile $manifestPath).ModuleVersion)
+    }
+}
+
+Describe 'scripts/New-Exercise.ps1' {
+    It 'produces a valid manifest when the author has an apostrophe' {
+        $root = Join-Path $TestDrive 'scaffold'
+        $scripts = Join-Path $root 'scripts'
+        $null = New-Item -ItemType Directory -Path $scripts -Force
+        Copy-Item (Join-Path $PSScriptRoot '..' 'scripts' 'New-Exercise.ps1') $scripts
+        & (Join-Path $scripts 'New-Exercise.ps1') -Id 'core-quote-test' -Topic Core -Level 1 -FunctionName 'Get-QuoteTest' -Author "O'Brien" 6>$null
+        $data = Import-PowerShellDataFile (Join-Path $root 'Exercises' 'Core' 'core-quote-test' 'exercise.psd1')
+        $data.Author | Should -BeExactly "O'Brien"
     }
 }

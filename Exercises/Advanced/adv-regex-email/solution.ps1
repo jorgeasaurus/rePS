@@ -6,5 +6,5 @@ function Test-EmailAddress {
         [string]$Address
     )
 
-    $Address -match '^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$'
+    $Address -match '\A[^@\s]+@[^@\s]+\.[A-Za-z]{2,}\z'
 }

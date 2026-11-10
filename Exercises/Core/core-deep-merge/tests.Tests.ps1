@@ -29,6 +29,15 @@ Describe 'Merge-Hashtable' {
         $base.Settings.Tls.Enabled | Should -BeFalse
         $base.ContainsKey('Version') | Should -BeFalse
     }
+    It 'keeps arrays intact, including single-item and empty ones' {
+        $r = Merge-Hashtable -Base @{ Ports = @(80); None = @(); Many = @(1, 2) } -Override @{ Extra = @(443) }
+        , $r.Ports | Should -BeOfType [array]
+        $r.Ports.Count | Should -Be 1
+        , $r.None | Should -BeOfType [array]
+        $r.None.Count | Should -Be 0
+        $r.Many.Count | Should -Be 2
+        , $r.Extra | Should -BeOfType [array]
+    }
     It 'returns a copy, not a reference to Base' {
         $r = Merge-Hashtable -Base $base -Override @{}
         $r.Settings.Port = 443

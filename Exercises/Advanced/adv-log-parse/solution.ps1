@@ -11,8 +11,11 @@ function ConvertFrom-LogLine {
     process {
         foreach ($text in $Line) {
             if ($text -notmatch $pattern) { continue }
+            $timestamp = [datetime]::MinValue
+            $valid = [datetime]::TryParseExact($Matches.Timestamp, 'yyyy-MM-dd HH:mm:ss', [cultureinfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$timestamp)
+            if (-not $valid) { continue }
             [pscustomobject]@{
-                Timestamp = [datetime]::ParseExact($Matches.Timestamp, 'yyyy-MM-dd HH:mm:ss', [cultureinfo]::InvariantCulture)
+                Timestamp = $timestamp
                 Level     = $Matches.Level.ToUpperInvariant()
                 Message   = $Matches.Message
             }

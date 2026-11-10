@@ -29,8 +29,11 @@ Start-RePSExercise -Id <string> [-NoOpen] [-Force] [-PassThru]
 ## Test-RePSExercise
 
 ```powershell
-Test-RePSExercise [[-Id] <string>] [-Path <string>] [-Quiet] [-PassThru]
+Test-RePSExercise [[-Id] <string>] [-Path <string>] [-Quiet] [-TimeoutSeconds <int>] [-PassThru]
 ```
+
+The run is stopped after `-TimeoutSeconds` (default 60), so an accidental infinite loop is
+recorded as a failure instead of hanging your session.
 
 Tests the current exercise by default. `-Path` tests any file, for example a scratch
 copy. `-PassThru` returns a `RePS.TestResult` object (`Passed`, `Status`,

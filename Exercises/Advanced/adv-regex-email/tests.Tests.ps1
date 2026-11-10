@@ -21,6 +21,7 @@ Describe 'Test-EmailAddress' {
         @{ Address = 'ada@localhost' }
         @{ Address = 'ada@example.c' }
         @{ Address = 'ada@example.com ' }
+        @{ Address = "ada@example.com`n" }
         @{ Address = '' }
     ) {
         Test-EmailAddress -Address $Address | Should -BeFalse

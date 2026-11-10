@@ -11,7 +11,11 @@ function Merge-Hashtable {
     $result = @{}
     foreach ($key in $Base.Keys) {
         $value = $Base[$key]
-        $result[$key] = if ($value -is [hashtable]) { Merge-Hashtable -Base $value -Override @{} } else { $value }
+        if ($value -is [hashtable]) {
+            $result[$key] = Merge-Hashtable -Base $value -Override @{}
+        } else {
+            $result[$key] = $value   # assign inside the branch: $x = if (...) { $array } would unroll it
+        }
     }
     foreach ($key in $Override.Keys) {
         $value = $Override[$key]

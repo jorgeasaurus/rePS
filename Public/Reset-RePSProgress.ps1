@@ -14,6 +14,7 @@ function Reset-RePSProgress {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param(
         [Parameter(Position = 0)]
+        [ValidatePattern('^[a-z0-9]+(-[a-z0-9]+)+$')]
         [string]$Id,
 
         [switch]$IncludeWorkspace

@@ -12,6 +12,7 @@ Describe 'ConvertFrom-LogLine' {
             '2026-01-05 12:00:02 [info] Service started [pid 42]'
             ''
             '2026-13-99 bad date [WARN] nope'
+            '2026-02-30 12:00:00 [WARN] impossible date'
         )
         $entries = @($lines | ConvertFrom-LogLine)
     }

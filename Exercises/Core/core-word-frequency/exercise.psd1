@@ -19,6 +19,7 @@ number of times it appears.
 '@
     Hints        = @(
         '-split ''\W+'' splits on runs of non-word characters. Filter out empty strings afterwards.'
+        '\W treats _ as a word character, so ''one_two'' stays one word. A character class like [\W_]+ includes it.'
         'Increment with $table[$word]++. A missing key starts as $null, and $null + 1 is 1.'
         'Lowercase each word before using it as a key.'
     )

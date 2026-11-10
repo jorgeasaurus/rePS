@@ -79,6 +79,23 @@ function Resolve-RePSExercise {
     $exercise
 }
 
+function Assert-RePSPlatform {
+    <#
+    .SYNOPSIS
+        Throws when an exercise does not support the current OS.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Exercise
+    )
+
+    $platform = Get-RePSPlatform
+    if ($platform -notin $Exercise.Platforms) {
+        throw "Exercise '$($Exercise.Id)' only runs on $($Exercise.Platforms -join ', '); this is $platform."
+    }
+}
+
 function Open-RePSFile {
     <#
     .SYNOPSIS

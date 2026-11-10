@@ -16,11 +16,12 @@ and outputs objects with:
   Timestamp  [datetime]
   Level      [string]  (uppercase: INFO, WARN, ERROR ...)
   Message    [string]
-Lines that do not match the format are silently skipped.
+Lines that do not match the format, or carry an impossible date such as
+2026-02-30, are silently skipped.
 '@
     Hints        = @(
         'Named captures: (?<Level>[A-Za-z]+) puts the match in $Matches.Level after a successful -match.'
-        'Parse dates without depending on the culture: [datetime]::ParseExact($s, ''yyyy-MM-dd HH:mm:ss'', [cultureinfo]::InvariantCulture)'
+        'A regex can''t know February has 28 days. [datetime]::TryParseExact($s, ''yyyy-MM-dd HH:mm:ss'', [cultureinfo]::InvariantCulture, ''None'', [ref]$dt) returns $false instead of throwing.'
         'Use a process block and only output when -match is $true.'
     )
 }
