@@ -11,3 +11,26 @@
   --ascii-size: clamp(5px, 1.45vw, 11px) !important;
   border-radius: 0.4rem;
 }
+
+.reps-hero__toggle {
+  display: block;
+  margin-top: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  font: inherit;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+  background: transparent;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.2rem;
+  cursor: pointer;
+}
+
+.reps-hero__toggle[hidden] {
+  display: none;
+}
+
+.reps-hero__toggle:hover,
+.reps-hero__toggle:focus-visible {
+  color: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+}

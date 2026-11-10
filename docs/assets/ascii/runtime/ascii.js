@@ -29,6 +29,10 @@ class AsciiArt extends HTMLElement {
   attributeChangedCallback() { if (this.isConnected) this.start(); }
   async start() {
     this.stop?.();
+    this.stop = null;
+    // rePS patch: upgrade calls start() from both attributeChangedCallback and
+    // connectedCallback; only the latest call may install a player.
+    const token = (this._startToken = {});
     const slug = (this.getAttribute("piece") || "").replace(/[^a-z0-9-]/g, "");
     if (!slug) return;
     if (!this.pre) {
@@ -44,13 +48,17 @@ class AsciiArt extends HTMLElement {
     this.setAttribute("role", "img");
     try {
       const mod = await import(`${BASE}pieces/${slug}.js`);
+      if (token !== this._startToken || !this.isConnected) return;
       if (!this.getAttribute("aria-label")) this.setAttribute("aria-label", mod.meta.name + ", animated ASCII art");
       // a piece's own settings come straight from attributes of the same name (repo="..." stars="...")
       const P = mod.meta.params || {}, values = {};
       for (const k of Object.keys(P)) if (this.hasAttribute(k)) values[k] = this.getAttribute(k);
+      // rePS patch: when not animating, show the piece's informative frame (meta.stillAt).
+      const still = this.hasAttribute("still") || (typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches);
       this.stop = play(this.pre, withParams(mod, values), {
         speed: parseFloat(this.getAttribute("speed")) || 1,
-        still: this.hasAttribute("still") || undefined,
+        still: still || undefined,
+        t0: still ? mod.meta.stillAt : undefined,
         look: {
           look: this.getAttribute("look") || undefined,
           chars: this.getAttribute("chars") || undefined,

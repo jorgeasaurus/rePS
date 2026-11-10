@@ -34,6 +34,7 @@ extra_css:
 extra_javascript:
   - path: assets/ascii/runtime/ascii.js
     type: module
+  - javascripts/hero.js
 
 markdown_extensions:
   - admonition

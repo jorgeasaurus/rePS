@@ -52,6 +52,8 @@ for (const step of SCRIPT) {
 }
 const RUN = clock;
 const PERIOD = RUN + 4;
+// Frame shown when not animating (reduced motion or paused): the full transcript.
+meta.stillAt = RUN + 0.5;
 
 export default function create() {
   const g = new Grid(meta.cols, meta.rows);

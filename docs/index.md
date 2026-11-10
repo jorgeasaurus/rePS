@@ -2,6 +2,7 @@
 
 <div class="reps-hero">
   <ascii-art piece="reps-rept-loop" aria-label="Animation of the rePS loop: rept runs the tests, one fails, the fix goes in, and the next rept passes"></ascii-art>
+  <button type="button" class="reps-hero__toggle" data-reps-hero-toggle>Pause animation</button>
 </div>
 
 **Practice reps for PowerShell.** Ask for a random exercise, solve it in your editor,
