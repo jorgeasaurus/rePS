@@ -23,6 +23,16 @@
     sync();
   });
 
+  // Follow OS reduced-motion changes while the page is open. Re-setting `piece` makes the
+  // element restart and re-read the preference; a manual pause (`still`) is left alone.
+  // One page-level listener, so there is nothing per element to clean up.
+  window.matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", () => {
+    for (const art of document.querySelectorAll(".reps-hero ascii-art")) {
+      if (!art.hasAttribute("still")) art.setAttribute("piece", art.getAttribute("piece"));
+    }
+    sync();
+  });
+
   // Material's instant navigation swaps pages without a reload; document$ fires on each.
   if (window.document$) window.document$.subscribe(sync);
   else document.addEventListener("DOMContentLoaded", sync);
