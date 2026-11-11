@@ -33,6 +33,19 @@
     sync();
   });
 
+  // A still hero (paused or reduced motion) draws once, so its canvas keeps the size it had
+  // then. Redraw it after a resize so it picks up the responsive glyph size; animated heroes
+  // re-measure on their own.
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      for (const art of document.querySelectorAll(".reps-hero ascii-art")) {
+        if (art.hasAttribute("still") || reduced()) art.setAttribute("piece", art.getAttribute("piece"));
+      }
+    }, 150);
+  });
+
   // Material's instant navigation swaps pages without a reload; document$ fires on each.
   if (window.document$) window.document$.subscribe(sync);
   else document.addEventListener("DOMContentLoaded", sync);
