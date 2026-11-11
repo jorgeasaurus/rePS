@@ -9,6 +9,10 @@ module version, so keep the `## [x.y.z] - date` heading format.
 
 ## [Unreleased]
 
+### Added
+
+- Docs home page: animated ASCII hero of the rePS loop (`rept` fails, fix, `rept` passes), built on the self-hosted ascii-magic-art runtime (MIT).
+
 ## [0.1.0] - 2026-11-10
 
 ### Added

@@ -28,6 +28,14 @@ theme:
 plugins:
   - search
 
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - path: assets/ascii/runtime/ascii.js
+    type: module
+  - javascripts/hero.js
+
 markdown_extensions:
   - admonition
   - attr_list
